@@ -39,6 +39,8 @@ private:
   sf::Clock time_last_shot;
   sf::Clock enemySpawnTimer;
   sf::Clock timeLeft;
+  sf::Clock runLoop;
+  sf::Clock bulletTime;
   float posX;
   float treeSpeed;
   float mountainSpeed;
@@ -62,6 +64,8 @@ private:
   sf::Time timerDifficulty;
   sf::Time levelTime;
   bool direction_left;
+  sf::View left_view;
+  sf::View right_view;
 
   void render()
   {
@@ -92,10 +96,15 @@ private:
       { 
         enemies.clear();
         timeLeft.restart();
+        enemiesLeft = 0;
         lives = 3;
         level = 1;
+        hitTheGround = 0;
         levelTime = sf::seconds(10.f);
-        player.setPosition(400, 460);
+        timerDifficulty = sf::seconds(4.f);
+        enemyMoveSpeed = 40.f;
+        player.setPosition(400, 472);
+        showLevel.setString("Level: " + int2Str(level));
       }
     }
     else if (checkWinner())
@@ -109,11 +118,12 @@ private:
         enemies.clear();
         timeLeft.restart();
         enemiesLeft = 0;
+        hitTheGround = 0;
         levelTime = levelTime + sf::seconds(30.f);
         level++;
         timerDifficulty = timerDifficulty - sf::seconds(0.1f);
         enemyMoveSpeed = enemyMoveSpeed + 10.f;
-        player.setPosition(400, 460);
+        player.setPosition(400, 472);
         showLevel.setString("Level: " + int2Str(level));
       }
     }
@@ -155,21 +165,16 @@ private:
   {
     //timer
     sf::Time elapsed = clock.getElapsedTime();
-    float playerSpeed = 700.f;
+  /*  float playerSpeed = 700.f;*/
     float maxSpeed = 450.f;
-    //accelerator havent used yet
-    float accelerator = 10.f;
     //vector to get players position on the map
     sf::Vector2f spot = player.getPosition();
-    speedometer.setString("Speed: " + int2Str(abs(speedX)) + "km/h");
+    std::string speedmeter = int2Str(abs(speedX));
+    speedometer.setString("Speed: " + int2Str(abs(speedX)) + " km/h");
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
     {
       //cant move out of the map
-      if (player.getPosition().y <= 40)
-      {
-        player.setPosition(spot.x, 40);
-      }
-      else
+      if (player.getPosition().y >= 40)
       {
         //if moving left. meaning speed is < 0
         if (speedX < 0)
@@ -202,11 +207,8 @@ private:
     else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
     {
       //cant move any lower
-      if (player.getPosition().y >= 450)
-      {
-        player.setPosition(spot.x, 450);
-      }
-      else
+
+      if (player.getPosition().y <= 450)
       {
         if (speedX < 0)
         {
@@ -237,52 +239,54 @@ private:
     }
     else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
     {
+      direction_left= true;
       //change sprite to face left. player smooth move.
       player.setTexture(plane_left);
       //starting speed if i turn around
-      player.move(playerSpeed*elapsed.asSeconds(), 0);
+      if(speedX < 0)
+      {
+        speedX /= 1.4f;
+        speedX+=20.f;
+      }
       //if player reaches 700,y stop
-      if (spot.x >= 720)
-      {
-        player.setPosition(720, spot.y);
-      }
+      //if (spot.x >= 740)
+      //{
+      //  player.setPosition(740, spot.y);
+      //}
 
-      if (speedX > maxSpeed)
+      if (speedX < maxSpeed&& speedX>-10)
       {
-        speedX = maxSpeed;
-      }
-      else
-      {
-        speedX += 5.f;
+        speedX += (maxSpeed/(speedX+100))*10.f;
       }
     }
 
     else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
     {
+      direction_left= false;
       player.setTexture(plane);
-      player.move(-playerSpeed*elapsed.asSeconds(), 0);
-
-      if (spot.x <= 20)
+      if(speedX > 0)
       {
-        player.setPosition(20, spot.y);
+        speedX /= 1.4f;
+        speedX-=20.f;
       }
+      //if (spot.x <= 0)
+      //{
+      //  player.setPosition(0, spot.y);
+      //}
 
-      if (speedX < -maxSpeed)
+      if (speedX > -maxSpeed && speedX<10)
       {
-        speedX = -maxSpeed;
-      }
-      else
-      {
-        speedX -= 5.f;
+        speedX -= (-maxSpeed/(speedX-100))*10.f;
       }
     }
     //move the backgrounds left or right
-    treeSpeed = elapsed.asSeconds() * speedX / 2;
+    treeSpeed = elapsed.asSeconds() * speedX / 1.5;
     grassSpeed = elapsed.asSeconds() * speedX;
-    mountainSpeed = elapsed.asSeconds() * speedX / 4;
+    mountainSpeed = elapsed.asSeconds() * speedX / 3.5;
     grass.move(grassSpeed, 0);
     grassRight.move(grassSpeed, 0);
     grassLeft.move(grassSpeed, 0);
+
     tree.move(treeSpeed, 0);
     treeRight.move(treeSpeed, 0);
     treeLeft.move(treeSpeed, 0);
@@ -292,9 +296,9 @@ private:
     //restart the timer
     clock.restart();
     //for tests
-    //int  X = speedX;
-    //int  Y = tree.getPosition().y;
-    //printf_s("%d ", X);
+    int  X = speedX;
+    int  Y = mountainLeft.getPosition().x;//mountain.getPosition().x;window.getView().getCenter().x;
+    printf_s("%d ", Y);
   }
 
   void enemyMove()
@@ -308,7 +312,7 @@ private:
 
       if (playerbox.intersects(enemiesbox))
       {
-        player.setPosition(400, 460);
+        player.setPosition(400, 472);
         speedX = 0;
         lives = lives - 1;
       }
@@ -348,18 +352,19 @@ private:
     //moving bullets
     sf::Time reload = time_last_shot.getElapsedTime();
     sf::Time bulletSpeed = bulletSpeedClock.getElapsedTime();
-
+    sf::Time bulletLife = bulletTime.getElapsedTime();
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
     {
       //create new sprite reference shot. set start postiion and add it to the bulelt list
-      if (reload > sf::seconds(0.2f))
+      if (reload > sf::seconds(0.4f))
       {
+        
         sf::Sprite *nshot = new sf::Sprite;
-        nshot->setPosition(player.getPosition().x + 20, player.getPosition().y + 20);
+        nshot->setPosition(player.getPosition());
         nshot->setTexture(shoot);
         bullets.push_back(*nshot);
         time_last_shot.restart();
-        if(player.getPosition().x > 350)
+        if(player.getPosition().x > 400)
         {
           direction_left = true;
         }
@@ -370,7 +375,7 @@ private:
       }
     }
 
-    for (auto i = bullets.begin(); i != bullets.end();)
+     for (auto i = bullets.begin(); i != bullets.end();)
     {
       //according to direction fly left or right
       if (direction_left)
@@ -382,7 +387,7 @@ private:
         i->move(1000.f * bulletSpeed.asSeconds(), 0);
       }
       //if bullet flies of the screen or is older then 0.3sec then erase from vector
-      if (i->getPosition().x <= 0 || i->getPosition().x >= 800)
+      if (i->getPosition().x <= -800 || i->getPosition().x >= 1200)
       {
         bullets.erase(i);
         break;
@@ -425,52 +430,55 @@ private:
     showEnemiesLeft.setString("Enemies left:" + int2Str(enemiesLeft));
   }
 
+
   void placeEnemiesAtStart()
   {	
-    float posx = rand() % 2550 + (-750);
+    float posx = rand() % 2350 + (-750);
     float posy = rand() % 100 + (-50);
     oneEnemy.setTexture(enemy);
     oneEnemy.setPosition(posx, posy);
   }
 
+
   void backgroundLoop()
-  {
-    if (grass.getPosition().x >= 795)
+  { 
+    if (grass.getPosition().x > 400)
     {
-      grassLeft.setPosition(-800, 475);
-      grass.setPosition(0, 475);
-      grassRight.setPosition(800, 475);
+      grassLeft.setPosition(-1200, 475);
+      grass.setPosition(-400, 475);
+      grassRight.setPosition(400, 475);
     }
-    else if (tree.getPosition().x >= 795)
+    else if (grass.getPosition().x < -400)
     {
-      treeLeft.setPosition(-800, 285);
-      tree.setPosition(0, 285);
-      treeRight.setPosition(800, 285);
+      grassLeft.setPosition(-400, 475);
+      grass.setPosition(400, 475);
+      grassRight.setPosition(1200, 475);
     }
 
-    else if (mountain.getPosition().x >= 795)
+    if (tree.getPosition().x > 400)
     {
-      mountainLeft.setPosition(-795, 0);
-      mountain.setPosition(0, 0);
-      mountainRight.setPosition(795, 0);
+      treeLeft.setPosition(-1200, 285);
+      tree.setPosition(-400, 285);
+      treeRight.setPosition(400, 285);
     }
-    else if (grass.getPosition().x <= -795)
+    else if (tree.getPosition().x < -400)
     {
-      grassLeft.setPosition(-800, 475);
-      grass.setPosition(0, 475);
-      grassRight.setPosition(800, 475);
+      treeLeft.setPosition(-400, 285);
+      tree.setPosition(400, 285);
+      treeRight.setPosition(1200, 285);
     }
-    else if (tree.getPosition().x <= -795)
+
+    if (mountain.getPosition().x > 400)
     {
-      treeLeft.setPosition(-800, 285);
-      tree.setPosition(0, 285);
-      treeRight.setPosition(800, 285);
+      mountainLeft.setPosition(-1200, 0);
+      mountain.setPosition(-400, 0);
+      mountainRight.setPosition(400, 0);
     }
-    else if (mountain.getPosition().x <= -795)
+    else if (mountain.getPosition().x < -400)
     {
-      mountainLeft.setPosition(-795, 0);
-      mountain.setPosition(0, 0);
-      mountainRight.setPosition(795, 0);
+      mountainLeft.setPosition(-400, 0);
+      mountain.setPosition(400, 0);
+      mountainRight.setPosition(1200, 0);
     }
   }
 
@@ -486,11 +494,14 @@ private:
   {
     if (lives == 0 || hitTheGround > 3)
     {
+      enemies.clear();
       speedX = 0;
+      enemiesLeft = 0;
       return true;
     }
     else
     {
+      createEnemies();
       return false;
     }
   }
@@ -498,15 +509,18 @@ private:
   {
     sf::Time timer = timeLeft.getElapsedTime();
     float countDown = levelTime.asSeconds() - timer.asSeconds();
-   if (timer >= levelTime)
+    if (timer >= levelTime)
     {
+      enemies.clear();
+      enemiesLeft = 0;
       timeRemaining.setString("You saved the planet!");
       speedX = 0;
       return true;
     }
     else
     { 
-      timeRemaining.setString("Time Survived: " + int2Str(countDown));
+      createEnemies();
+      timeRemaining.setString("Time left : " + int2Str(countDown));
       return false;
     }
 
@@ -517,6 +531,7 @@ private:
     timerDifficulty = sf::seconds(4.f);
     if (spawnSome > timerDifficulty)
     {
+
       enemiesLeft++;
       placeEnemiesAtStart();
       enemies.push_back(oneEnemy);
@@ -526,17 +541,30 @@ private:
 public:
   void Run()
   {
+
     while (window.isOpen())
     {
+      /*sf::Time runElapsed = runLoop.getElapsedTime();*/
       processEvent();
       playerMove();
       enemyMove();
       createBullet();
       collision();
       backgroundLoop();
-      createEnemies();
+      //create a view relative to speed
+      window.setView(sf::View(sf::Vector2f(player.getPosition().x-speedX*0.8/**runElapsed.asSeconds()*/,300),sf::Vector2f(800,600)));
+      //createEnemies();
+      //make the string depend on the view (view is set at 400,300)
+      speedometer.setPosition(window.getView().getCenter()+sf::Vector2f(-390,-300));
+      timeRemaining.setPosition(window.getView().getCenter()+sf::Vector2f(-120,-300));
+      livesLeft.setPosition(window.getView().getCenter()+sf::Vector2f(240,-300));
+      showEnemiesLeft.setPosition(window.getView().getCenter()+sf::Vector2f(-390,270));
+      bombsExploded.setPosition(window.getView().getCenter()+sf::Vector2f(-120,270));
+      showLevel.setPosition(window.getView().getCenter()+sf::Vector2f(280,270));
       render();
+      /*runLoop.restart();*/
     }
+
   }
 
   FlyingGame() : window(sf::VideoMode(800, 600, 32), "FlyingGame")
@@ -548,7 +576,7 @@ public:
     hitTheGround = 0;
     enemiesLeft = 0;
     enemiesKilled = 0;
-    levelTime = sf::seconds(10.f);
+    levelTime = sf::seconds(30.f);
     window.setMouseCursorVisible(false);
     //window.setFramerateLimit(3);
     window.setVerticalSyncEnabled(true);
@@ -583,7 +611,8 @@ public:
     mountain.setPosition(0, 0);
     mountainRight.setPosition(800, 0);
     mountainLeft.setPosition(-800, 0);
-    player.setPosition(400, 460);
+    player.setPosition(400, 472);
+    player.setOrigin(32,16);
     player.setTextureRect(sf::IntRect(0, 0, 64, 32));
     tree.setTextureRect(sf::IntRect(0, 280, 800, 250));
     treeRight.setTextureRect(sf::IntRect(0, 280, 800, 250));
@@ -594,7 +623,6 @@ public:
     grass.setTextureRect(sf::IntRect(0, 470, 800, 200));
     grassRight.setTextureRect(sf::IntRect(0, 470, 800, 200));
     grassLeft.setTextureRect(sf::IntRect(0, 470, 800, 200));
-    showEnemiesLeft.setPosition(10,540);
     showEnemiesLeft.setFont(font);
     showEnemiesLeft.setCharacterSize(24);
     showEnemiesLeft.setColor(sf::Color::Red);
@@ -602,7 +630,6 @@ public:
     livesLeft.setFont(font);
     livesLeft.setCharacterSize(24);
     livesLeft.setColor(sf::Color::Red);
-    bombsExploded.setPosition(280, 540);
     bombsExploded.setFont(font);
     bombsExploded.setCharacterSize(24);
     bombsExploded.setColor(sf::Color::Red);
@@ -613,14 +640,11 @@ public:
     timeRemaining.setFont(font);
     timeRemaining.setCharacterSize(24);
     timeRemaining.setColor(sf::Color::Red);
-    timeRemaining.setPosition(280, 10);
     showLevel.setFont(font);
     showLevel.setCharacterSize(24);
     showLevel.setColor(sf::Color::Red);
-    showLevel.setPosition(620, 540);
     showLevel.setString("Level: " + int2Str(level));
     speedometer.setFont(font);
-    speedometer.setPosition(10,10);
     speedometer.setCharacterSize(24);
     speedometer.setColor(sf::Color::Red);
     tryAgain.setFont(font);
