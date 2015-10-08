@@ -6,8 +6,13 @@
 #include <vector>
 #include <string>
 
+//TODO-s
+//organize code
+//animate explosions
+//BUG bullets change direction if player turns
 
 class FlyingGame
+
 {
 private:
   sf::RenderWindow window;
@@ -39,7 +44,6 @@ private:
   sf::Clock time_last_shot;
   sf::Clock enemySpawnTimer;
   sf::Clock timeLeft;
-  sf::Clock runLoop;
   sf::Clock bulletTime;
   float posX;
   float treeSpeed;
@@ -64,8 +68,7 @@ private:
   sf::Time timerDifficulty;
   sf::Time levelTime;
   bool direction_left;
-  sf::View left_view;
-  sf::View right_view;
+
 
   void render()
   {
@@ -88,19 +91,20 @@ private:
     window.draw(speedometer);
     if (checkIfGameOver())
     {	
-      tryAgain.setString("Press SPACE to try again\nPress ESCAPE to exit the game");
+      tryAgain.setString("Press ENTER to try again\nPress ESCAPE to exit the game");
       gameOver.setString("Game Over");
       window.draw(gameOver);
       window.draw(tryAgain);
-      if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
+      if (sf::Keyboard::isKeyPressed(sf::Keyboard::Return))
       { 
+        bullets.clear();
         enemies.clear();
         timeLeft.restart();
         enemiesLeft = 0;
         lives = 3;
         level = 1;
         hitTheGround = 0;
-        levelTime = sf::seconds(10.f);
+        levelTime = sf::seconds(30.f);
         timerDifficulty = sf::seconds(4.f);
         enemyMoveSpeed = 40.f;
         player.setPosition(400, 472);
@@ -110,11 +114,12 @@ private:
     else if (checkWinner())
     {
       gameOver.setString("You survived.");
-      tryAgain.setString("Press SPACE to play the next level");
+      tryAgain.setString("Press ENTER to play the next level");
       window.draw(gameOver);
       window.draw(tryAgain);
-      if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
+      if (sf::Keyboard::isKeyPressed(sf::Keyboard::Return))
       {
+         bullets.clear();
         enemies.clear();
         timeLeft.restart();
         enemiesLeft = 0;
@@ -150,7 +155,7 @@ private:
     while (window.pollEvent(event))
       //  switch(event.type)
         //{
-          // //    //case sf::Event::KeyPressed : PlayerInput(event.key.code, true);
+          // case sf::Event::KeyPressed : PlayerInput(event.key.code, true);
             // //    //  break;
               // //    //  case sf::Event::KeyReleased : PlayerInput(event.key.code, false);
                 // //      break;
@@ -166,15 +171,15 @@ private:
     //timer
     sf::Time elapsed = clock.getElapsedTime();
   /*  float playerSpeed = 700.f;*/
-    float maxSpeed = 450.f;
+    float maxSpeed = 500.f;
+    int realSpeed = abs(speedX);
     //vector to get players position on the map
     sf::Vector2f spot = player.getPosition();
     std::string speedmeter = int2Str(abs(speedX));
-    speedometer.setString("Speed: " + int2Str(abs(speedX)) + " km/h");
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
     {
       //cant move out of the map
-      if (player.getPosition().y >= 40)
+      if (player.getPosition().y >= 45)
       {
         //if moving left. meaning speed is < 0
         if (speedX < 0)
@@ -208,7 +213,7 @@ private:
     {
       //cant move any lower
 
-      if (player.getPosition().y <= 450)
+      if (player.getPosition().y <= 465)
       {
         if (speedX < 0)
         {
@@ -242,6 +247,7 @@ private:
       direction_left= true;
       //change sprite to face left. player smooth move.
       player.setTexture(plane_left);
+      
       //starting speed if i turn around
       if(speedX < 0)
       {
@@ -269,11 +275,6 @@ private:
         speedX /= 1.4f;
         speedX-=20.f;
       }
-      //if (spot.x <= 0)
-      //{
-      //  player.setPosition(0, spot.y);
-      //}
-
       if (speedX > -maxSpeed && speedX<10)
       {
         speedX -= (-maxSpeed/(speedX-100))*10.f;
@@ -296,9 +297,10 @@ private:
     //restart the timer
     clock.restart();
     //for tests
-    int  X = speedX;
-    int  Y = mountainLeft.getPosition().x;//mountain.getPosition().x;window.getView().getCenter().x;
-    printf_s("%d ", Y);
+    //int  X = speedX;
+    //int  Y = mountainLeft.getPosition().x;//mountain.getPosition().x;window.getView().getCenter().x;
+    //printf_s("%d ", Y);
+    speedometer.setString("Speed: " + int2Str(realSpeed) + " km/h");
   }
 
   void enemyMove()
@@ -318,22 +320,22 @@ private:
       }
 
       sf::Vector2f asd = i->getPosition();
-      if (asd.y >= 480)//funktsioniert nicht :? DOCH
+      if (asd.y >= 470)//funktsioniert nicht :? DOCH
       {
-        i->setPosition(asd.x, 480);
+        //i->setPosition(asd.x, 480);
         hitTheGround++;
         enemiesLeft--;
         i->getPosition().y;
         enemies.erase(i);
         break;
       }
-      else if (i->getPosition().x > 1595)
+      else if (i->getPosition().x > 1600)
       {
-        i->setPosition(-795, asd.y);
+        i->setPosition(-800, asd.y);
       }
-      else if (i->getPosition().x < -795)
+      else if (i->getPosition().x < -800)
       {
-        i->setPosition(1595, asd.y);
+        i->setPosition(1600, asd.y);
       }
       else
       {
@@ -352,42 +354,43 @@ private:
     //moving bullets
     sf::Time reload = time_last_shot.getElapsedTime();
     sf::Time bulletSpeed = bulletSpeedClock.getElapsedTime();
-    sf::Time bulletLife = bulletTime.getElapsedTime();
+    //sf::Time bullet = bulletTime.getElapsedTime();
+
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
     {
+
       //create new sprite reference shot. set start postiion and add it to the bulelt list
-      if (reload > sf::seconds(0.4f))
+      if (reload > sf::seconds(0.8f))
       {
-        
         sf::Sprite *nshot = new sf::Sprite;
+        //if(direction_left)
+        //{
+        //nshot->setPosition(player.getPosition().x*-1, player.getPosition().y);
+        //}
+        //else
+        //{
         nshot->setPosition(player.getPosition());
+        //}
         nshot->setTexture(shoot);
+        //nshot->move(,0);/*(direction_left*1000.f);*/
         bullets.push_back(*nshot);
         time_last_shot.restart();
-        if(player.getPosition().x > 400)
-        {
-          direction_left = true;
-        }
-        else
-        {
-          direction_left = false;
-        }
-      }
     }
-
+    }
      for (auto i = bullets.begin(); i != bullets.end();)
     {
-      //according to direction fly left or right
+      ////according to direction fly left or right
       if (direction_left)
       {
-        i->move(-1000.f * bulletSpeed.asSeconds(), 0);
+       i->move(-1000.f * bulletSpeed.asSeconds(), 0);
       }
       else
       {
         i->move(1000.f * bulletSpeed.asSeconds(), 0);
       }
+     /*i->move(1000.f * bulletSpeed.asSeconds(),0);*/
       //if bullet flies of the screen or is older then 0.3sec then erase from vector
-      if (i->getPosition().x <= -800 || i->getPosition().x >= 1200)
+      if (i->getPosition().x <= -400 || i->getPosition().x >= 1200)
       {
         bullets.erase(i);
         break;
@@ -427,14 +430,14 @@ private:
         e++;
       }
     }
-    showEnemiesLeft.setString("Enemies left:" + int2Str(enemiesLeft));
+    showEnemiesLeft.setString("Enemies left: " + int2Str(enemiesLeft));
   }
 
 
   void placeEnemiesAtStart()
   {	
     float posx = rand() % 2350 + (-750);
-    float posy = rand() % 100 + (-50);
+    float posy = rand() % 50 + (-50);
     oneEnemy.setTexture(enemy);
     oneEnemy.setPosition(posx, posy);
   }
@@ -501,6 +504,7 @@ private:
     }
     else
     {
+      playerMove();
       createEnemies();
       return false;
     }
@@ -508,7 +512,7 @@ private:
   bool checkWinner()
   {
     sf::Time timer = timeLeft.getElapsedTime();
-    float countDown = levelTime.asSeconds() - timer.asSeconds();
+    int countDown = levelTime.asSeconds() - timer.asSeconds();
     if (timer >= levelTime)
     {
       enemies.clear();
@@ -519,8 +523,9 @@ private:
     }
     else
     { 
+      playerMove();
       createEnemies();
-      timeRemaining.setString("Time left : " + int2Str(countDown));
+      timeRemaining.setString("Time left : " + int2Str(countDown) + " seconds");
       return false;
     }
 
@@ -544,30 +549,31 @@ public:
 
     while (window.isOpen())
     {
-      /*sf::Time runElapsed = runLoop.getElapsedTime();*/
+      
       processEvent();
-      playerMove();
-      enemyMove();
-      createBullet();
-      collision();
-      backgroundLoop();
       //create a view relative to speed
-      window.setView(sf::View(sf::Vector2f(player.getPosition().x-speedX*0.8/**runElapsed.asSeconds()*/,300),sf::Vector2f(800,600)));
-      //createEnemies();
-      //make the string depend on the view (view is set at 400,300)
+       sf::View gameview (sf::Vector2f(player.getPosition().x-speedX*0.7,300),sf::Vector2f(800,600));
+       window.setView(gameview);
+    //window.setView(sf::View(sf::Vector2f(player.getPosition().x-speedX*0.8,300),sf::Vector2f(800,600)));
+    //make the string depend on the view (view is set at 400,300)
       speedometer.setPosition(window.getView().getCenter()+sf::Vector2f(-390,-300));
       timeRemaining.setPosition(window.getView().getCenter()+sf::Vector2f(-120,-300));
       livesLeft.setPosition(window.getView().getCenter()+sf::Vector2f(240,-300));
       showEnemiesLeft.setPosition(window.getView().getCenter()+sf::Vector2f(-390,270));
       bombsExploded.setPosition(window.getView().getCenter()+sf::Vector2f(-120,270));
       showLevel.setPosition(window.getView().getCenter()+sf::Vector2f(280,270));
-      render();
-      /*runLoop.restart();*/
+      /*playerMove();*/
+      enemyMove();
+      createBullet();
+      collision();
+      backgroundLoop();
+      //createEnemies();
+       render();
     }
 
   }
 
-  FlyingGame() : window(sf::VideoMode(800, 600, 32), "FlyingGame")
+  FlyingGame() : window(sf::VideoMode(800, 600, 32), "Rotes Flugzeug")
   {
     //game window with player and background etc automaticly created when i create instance of flyinggame class
     level = 1;
