@@ -5,6 +5,10 @@
 #include <sstream>
 #include <vector>
 #include <string>
+#include <algorithm>
+#include <memory>
+
+#include "Bullet.h"
 
 //TODO-s
 //organize code
@@ -12,7 +16,6 @@
 //BUG bullets change direction if player turns
 
 class FlyingGame
-
 {
 private:
   sf::RenderWindow window;
@@ -35,7 +38,7 @@ private:
   sf::Sprite player;
   sf::Sprite bullet;
   std::vector<sf::Sprite> enemies;
-  std::vector<sf::Sprite> bullets;
+  std::vector<std::shared_ptr<Bullet>> bullets;
   sf::FloatRect enemiesbox;
   sf::Sprite oneEnemy;
   sf::Clock clock;
@@ -67,7 +70,7 @@ private:
   sf::Text speedometer;
   sf::Time timerDifficulty;
   sf::Time levelTime;
-  bool direction_left;
+  bool directionLeft;
 
 
   void render()
@@ -111,7 +114,7 @@ private:
         showLevel.setString("Level: " + int2Str(level));
       }
     }
-    else if (checkWinner())
+    else if(checkWinner())
     {
       gameOver.setString("You survived.");
       tryAgain.setString("Press ENTER to play the next level");
@@ -142,7 +145,7 @@ private:
       }
       for (auto b = bullets.begin(); b != bullets.end(); b++)
       {
-        window.draw(*b);
+        window.draw(*(*b));
       }
     }
     window.display();
@@ -170,7 +173,6 @@ private:
   {
     //timer
     sf::Time elapsed = clock.getElapsedTime();
-  /*  float playerSpeed = 700.f;*/
     float maxSpeed = 500.f;
     int realSpeed = abs(speedX);
     //vector to get players position on the map
@@ -179,9 +181,9 @@ private:
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
     {
       //cant move out of the map
-      if (player.getPosition().y >= 45)
+      if (player.getPosition().y > 45)
       {
-        //if moving left. meaning speed is < 0
+        /*if moving left. meaning speed is < 0*/
         if (speedX < 0)
         {
           if (speedX < -maxSpeed)
@@ -190,7 +192,7 @@ private:
           }
           else
           {
-            speedX -= 3.f;
+            speedX -= 5.f;
           }
           player.move(0, speedX * elapsed.asSeconds());
         }
@@ -206,14 +208,13 @@ private:
           }
           player.move(0, -speedX * elapsed.asSeconds());
 
-        }
+       }
       }
     }
     else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
     {
       //cant move any lower
-
-      if (player.getPosition().y <= 465)
+      if (player.getPosition().y < 472)
       {
         if (speedX < 0)
         {
@@ -223,9 +224,8 @@ private:
           }
           else
           {
-            speedX -= 3.f;
+            speedX -= 2.f;
           }
-
           player.move(0, -speedX*elapsed.asSeconds());
         }
         else
@@ -236,7 +236,7 @@ private:
           }
           else
           {
-            speedX += 3.f;
+            speedX += 2.f;
           }
           player.move(0, speedX * elapsed.asSeconds());
         }
@@ -244,22 +244,15 @@ private:
     }
     else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
     {
-      direction_left= true;
+      directionLeft= true;
       //change sprite to face left. player smooth move.
-      player.setTexture(plane_left);
-      
+      player.setTexture(plane_left);    
       //starting speed if i turn around
       if(speedX < 0)
       {
         speedX /= 1.4f;
         speedX+=20.f;
       }
-      //if player reaches 700,y stop
-      //if (spot.x >= 740)
-      //{
-      //  player.setPosition(740, spot.y);
-      //}
-
       if (speedX < maxSpeed&& speedX>-10)
       {
         speedX += (maxSpeed/(speedX+100))*10.f;
@@ -268,7 +261,7 @@ private:
 
     else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
     {
-      direction_left= false;
+      directionLeft= false;
       player.setTexture(plane);
       if(speedX > 0)
       {
@@ -287,7 +280,6 @@ private:
     grass.move(grassSpeed, 0);
     grassRight.move(grassSpeed, 0);
     grassLeft.move(grassSpeed, 0);
-
     tree.move(treeSpeed, 0);
     treeRight.move(treeSpeed, 0);
     treeLeft.move(treeSpeed, 0);
@@ -297,8 +289,8 @@ private:
     //restart the timer
     clock.restart();
     //for tests
-    //int  X = speedX;
-    //int  Y = mountainLeft.getPosition().x;//mountain.getPosition().x;window.getView().getCenter().x;
+    ////int  X = speedX;
+    //int  Y = player.getPosition().y;//mountain.getPosition().x;window.getView().getCenter().x;
     //printf_s("%d ", Y);
     speedometer.setString("Speed: " + int2Str(realSpeed) + " km/h");
   }
@@ -355,51 +347,22 @@ private:
     sf::Time reload = time_last_shot.getElapsedTime();
     sf::Time bulletSpeed = bulletSpeedClock.getElapsedTime();
     //sf::Time bullet = bulletTime.getElapsedTime();
-
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
     {
-
       //create new sprite reference shot. set start postiion and add it to the bulelt list
       if (reload > sf::seconds(0.8f))
       {
-        sf::Sprite *nshot = new sf::Sprite;
-        //if(direction_left)
-        //{
-        //nshot->setPosition(player.getPosition().x*-1, player.getPosition().y);
-        //}
-        //else
-        //{
-        nshot->setPosition(player.getPosition());
-        //}
-        nshot->setTexture(shoot);
-        //nshot->move(,0);/*(direction_left*1000.f);*/
-        bullets.push_back(*nshot);
+        std::shared_ptr<Bullet> pBullet(new Bullet(shoot, directionLeft, 1000, 500, player.getPosition()));      
+        bullets.push_back(pBullet);
         time_last_shot.restart();
+      }
     }
-    }
-     for (auto i = bullets.begin(); i != bullets.end();)
+
+    for (auto i = bullets.begin(); i != bullets.end(); i++)
     {
-      ////according to direction fly left or right
-      if (direction_left)
-      {
-       i->move(-1000.f * bulletSpeed.asSeconds(), 0);
-      }
-      else
-      {
-        i->move(1000.f * bulletSpeed.asSeconds(), 0);
-      }
-     /*i->move(1000.f * bulletSpeed.asSeconds(),0);*/
-      //if bullet flies of the screen or is older then 0.3sec then erase from vector
-      if (i->getPosition().x <= -400 || i->getPosition().x >= 1200)
-      {
-        bullets.erase(i);
-        break;
-      }
-      else
-      {
-        i++;
-      }
+      (*i)->Update(bulletSpeed.asSeconds());
     }
+    bullets.erase(std::remove_if(bullets.begin(), bullets.end(), [](const std::shared_ptr<Bullet>& o) { return !o->IsAlive(); }), bullets.end());
     bulletSpeedClock.restart();
   }
 
@@ -412,7 +375,7 @@ private:
       for (auto i = bullets.begin(); i != bullets.end(); i++)
       {
         sf::FloatRect enemiez = e->getGlobalBounds();
-        sf::FloatRect bulletz = i->getGlobalBounds();
+        sf::FloatRect bulletz = (*i)->getGlobalBounds();
 
         if (bulletz.intersects(enemiez))
         {
@@ -441,7 +404,6 @@ private:
     oneEnemy.setTexture(enemy);
     oneEnemy.setPosition(posx, posy);
   }
-
 
   void backgroundLoop()
   { 
@@ -536,7 +498,6 @@ private:
     timerDifficulty = sf::seconds(4.f);
     if (spawnSome > timerDifficulty)
     {
-
       enemiesLeft++;
       placeEnemiesAtStart();
       enemies.push_back(oneEnemy);
@@ -546,23 +507,19 @@ private:
 public:
   void Run()
   {
-
     while (window.isOpen())
-    {
-      
+    {     
       processEvent();
       //create a view relative to speed
        sf::View gameview (sf::Vector2f(player.getPosition().x-speedX*0.7,300),sf::Vector2f(800,600));
        window.setView(gameview);
-    //window.setView(sf::View(sf::Vector2f(player.getPosition().x-speedX*0.8,300),sf::Vector2f(800,600)));
-    //make the string depend on the view (view is set at 400,300)
       speedometer.setPosition(window.getView().getCenter()+sf::Vector2f(-390,-300));
       timeRemaining.setPosition(window.getView().getCenter()+sf::Vector2f(-120,-300));
       livesLeft.setPosition(window.getView().getCenter()+sf::Vector2f(240,-300));
       showEnemiesLeft.setPosition(window.getView().getCenter()+sf::Vector2f(-390,270));
       bombsExploded.setPosition(window.getView().getCenter()+sf::Vector2f(-120,270));
       showLevel.setPosition(window.getView().getCenter()+sf::Vector2f(280,270));
-      /*playerMove();*/
+     /* playerMove();*/
       enemyMove();
       createBullet();
       collision();
@@ -570,7 +527,6 @@ public:
       //createEnemies();
        render();
     }
-
   }
 
   FlyingGame() : window(sf::VideoMode(800, 600, 32), "Rotes Flugzeug")
