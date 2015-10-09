@@ -6,7 +6,7 @@ private:
   sf::Sprite sprite;
   bool directionLeft;
   int speedPerSecond;
-  double distanceTravelled;
+  float distanceTravelled;
   int maximumDistance;
 
 protected:
@@ -26,18 +26,20 @@ public:
     this->sprite.setPosition(position);
   }
 
-  void Update(double timeDelta)
+  void Update(float timeDelta)
   {
-    auto distanceTravlledThisUpdate = speedPerSecond * timeDelta;
+    auto distanceTravelledThisUpdate = speedPerSecond * timeDelta;
 
-    this->distanceTravelled += distanceTravlledThisUpdate;
+    this->distanceTravelled += distanceTravelledThisUpdate;
 
     if(directionLeft) 
     {
-        distanceTravelled *= -1;
+        this->sprite.move(-distanceTravelledThisUpdate,0);
     }
-
-    this->sprite.move(distanceTravelled, 0.0f);
+    else
+    {
+    this->sprite.move(distanceTravelledThisUpdate, 0);
+    }
   }
 
   sf::FloatRect getGlobalBounds() const
