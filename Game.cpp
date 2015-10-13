@@ -1,22 +1,8 @@
-#include <SFML/Graphics.hpp>
-#include <SFML/System.hpp>
-#include <stdlib.h>
-#include <iostream>
-#include <sstream>
-#include <vector>
-#include <string>
-#include <algorithm>
-#include <memory>
-#include "Enemy.h"
-#include "Bullet.h"
+#include "Game.h"
 
-//TODO-s
+//TODO
 //organize code
 //animate explosions
-
-class FlyingGame
-{
-private:
   sf::RenderWindow window;
   sf::Texture treepic;
   sf::Texture grasspic;
@@ -25,6 +11,7 @@ private:
   sf::Texture plane_left;
   sf::Texture enemy;
   sf::Texture shoot;
+  sf::Texture explosion;
   sf::Sprite mountain;
   sf::Sprite mountainRight;
   sf::Sprite mountainLeft;
@@ -38,22 +25,21 @@ private:
   sf::Sprite bullet;
   std::vector<std::shared_ptr<Enemy>> enemies;
   std::vector<std::shared_ptr<Bullet>> bullets;
-  sf::Sprite oneEnemy;
+  std::vector<std::shared_ptr<AnimatedSprite>> explosions;
   sf::Clock playerDeltaTime;
   sf::Clock enemyDeltaTime;
   sf::Clock bulletDeltaTimer;
   sf::Clock bulletSpawnTimer;
   sf::Clock enemySpawnTimer;
+  sf::Clock explosionDeltaTimer;
   sf::Clock timeLeft;
   sf::Clock bulletTime;
-  float posX;
   float treeSpeed;
   float mountainSpeed;
   float grassSpeed;
   float speedX;
   float enemyMoveSpeed;
   int lives;
-  int enemiesLeft;
   int hitTheGround;
   int level;
   sf::Text showEnemiesLeft;
@@ -67,9 +53,10 @@ private:
   sf::Text speedometer;
   sf::Time timerDifficulty;
   sf::Time levelTime;
+  Animation boom;
   bool directionLeft;
 
-  void processEvent()
+  void Game::processEvent()
   {
     sf::Event event;
     //events handler bad and slow. just using for closing the window
@@ -87,16 +74,15 @@ private:
     //}
   }
 
-  void playerMove()
+  void Game::playerMove()
   {
     //timer
     const auto elapsed = playerDeltaTime.getElapsedTime();
     float maxSpeed = 500.f;
     //float speedY 
-    float realSpeed = abs(speedX);
+    int realSpeed = abs(speedX);
     //vector to get players position on the map
     /*sf::Vector2f spot = player.getPosition();*/
-    std::string speedmeter = int2Str(abs(speedX));
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
     {
       //cant move out of the map
@@ -203,7 +189,7 @@ private:
           speedX += 2.f;
         } 
     }
-    speedometer.setString("Speed: " + int2Str(realSpeed) + " km/h");
+    speedometer.setString("Speed: " + std::to_string(realSpeed) + " km/h");
             //move the backgrounds left or right
     treeSpeed = elapsed.asSeconds() * (speedX / 3);
     grassSpeed = elapsed.asSeconds() * speedX;
@@ -221,7 +207,7 @@ private:
         playerDeltaTime.restart();
   }
 
-  void createBullet()
+  void Game::createBullet()
   {
     //moving bullets
     const auto reload = bulletSpawnTimer.getElapsedTime();
@@ -246,19 +232,40 @@ private:
 
   }
 
-  void createEnemies()
+  void Game::createExplosion()
+  {
+    const auto explosionDeltaTime = explosionDeltaTimer.getElapsedTime();
+    boom.setSpriteSheet(explosion);
+    for (unsigned j = 0; j < explosion.getSize().y; j+=30)
+    {
+      for (unsigned i = 0; i < explosion.getSize().x; i+=30)
+    {
+      boom.addFrame(sf::IntRect(i,j,30,30));
+    }
+    }
+    for (auto i = explosions.begin(); i != explosions.end(); i++)
+    {
+     (*i)->play(boom);
+     (*i)->update(explosionDeltaTime);
+     (*i)->move(speedX*explosionDeltaTime.asSeconds(),0);
+     /*(*i)->stop();*/
+    }
+    explosions.erase(std::remove_if(explosions.begin(), explosions.end(),[this](const std::shared_ptr<AnimatedSprite>& o){ return !o->isPlaying(); }), explosions.end());
+   explosionDeltaTimer.restart();
+  }
+
+  void Game::createEnemies()
   {
     //create random starting position
-    float posx = static_cast <float> (rand()) / (static_cast <float> (2350.f + (-750.f)));
-    float posy = -20.f;
+    int posx = rand() % 2350 + (-750);
+    int posy = -20;
     const auto spawnSome = enemySpawnTimer.getElapsedTime();
     const auto timeSinceStart = enemyDeltaTime.getElapsedTime();
     timerDifficulty = sf::seconds(5.f);
     if (spawnSome > timerDifficulty)
     {
       std::shared_ptr<Enemy>pEnemy (new Enemy(enemy,enemyMoveSpeed,posx,posy));
-      enemiesLeft++;
-      enemies.push_back(std::move(pEnemy));
+      enemies.push_back(pEnemy);
       enemySpawnTimer.restart();
     }
 
@@ -270,9 +277,11 @@ private:
     enemies.erase(std::remove_if(enemies.begin(), enemies.end(),[this](const std::shared_ptr<Enemy> o)
     {
       if (!(*o).isEnemyAlive())
-      {
+      {    
+        std::shared_ptr<AnimatedSprite>pExplosion (new AnimatedSprite(sf::seconds(0.1f),false,false));
+        pExplosion->setPosition(o->getEnemyPosition());
+        explosions.push_back(pExplosion);
         hitTheGround++;
-        enemiesLeft--;
         return true;
       }
       else
@@ -282,7 +291,7 @@ private:
     enemyDeltaTime.restart();
   }
 
-  void collision()
+  void Game::collision()
   {
     for (auto e = enemies.begin(); e != enemies.end();)
     {
@@ -295,10 +304,12 @@ private:
 
         if (bulletz.intersects(enemiez))
         {
-          enemiesLeft--;
           //assing iterator to return value of erase, because once you erase an elelemnt your pervious iterator is invalidated.
-          e = enemies.erase(e);
+          std::shared_ptr<AnimatedSprite>pExplosion (new AnimatedSprite(sf::seconds(0.1f),false,false));
+          pExplosion->setPosition((*e)->getEnemyPosition());
+          explosions.push_back(pExplosion);
           bullets.erase(i);
+          e = enemies.erase(e);
           collides = true;
           break;
         }
@@ -316,17 +327,16 @@ private:
         player.setPosition(400, 472);
         speedX = 0;
         lives--;
-        enemiesLeft--;
         enemies.erase(i);
         break;
       }
     }
-    bombsExploded.setString("Bombs Exploded: " + int2Str(hitTheGround));
-    showEnemiesLeft.setString("Enemies left: " + int2Str(enemiesLeft));
-    livesLeft.setString("Lives left: " + int2Str(lives));
+    bombsExploded.setString("Bombs Exploded: " + std::to_string(hitTheGround));
+    showEnemiesLeft.setString("Enemies left: " + std::to_string(enemies.size()));
+    livesLeft.setString("Lives left: " + std::to_string(lives));
   }
 
-  void backgroundLoop()
+  void Game::backgroundLoop()
   { 
     if (grass.getPosition().x > 400)
     {
@@ -368,15 +378,7 @@ private:
     }
   }
 
-  static inline std::string int2Str(int x)
-    //converts int to string with help of sstream namespace
-  {
-    std::stringstream type;
-    type << x;
-    return type.str();
-  }
-
-  bool checkIfGameOver()
+  bool Game::checkIfGameOver()
   {
     if (lives == 0 || hitTheGround > 3)
     {
@@ -384,7 +386,6 @@ private:
       enemies.clear();
       bullets.clear();
       speedX = 0;
-      enemiesLeft = 0;
       return true;
     }
     else
@@ -394,28 +395,28 @@ private:
     }
   }
 
-  bool checkWinner()
+  bool Game::checkWinner()
   {
     const auto timer = timeLeft.getElapsedTime();
-    auto countDown = levelTime.asSeconds() - timer.asSeconds();
+    int countDown = levelTime.asSeconds() - timer.asSeconds();
     if (timer >= levelTime)
     {
       enemies.clear();
       bullets.clear();
-      enemiesLeft = 0;
       timeRemaining.setString("You saved the planet!");
       speedX = 0;
       return true;
     }
     else
     { 
-      timeRemaining.setString("Time left : " + int2Str(countDown) + " seconds");
+     timeRemaining.setString("Time left : " + std::to_string(countDown) + " seconds");
       return false;
     }
 
   }
 
-  void render()
+
+  void Game::render()
   {
     //clear old draw new place and show
     window.clear();
@@ -445,14 +446,13 @@ private:
         bullets.clear();
         enemies.clear();
         timeLeft.restart();
-        enemiesLeft = 0;
         hitTheGround = 0;
         levelTime = levelTime + sf::seconds(30.f);
         level++;
         timerDifficulty -= sf::seconds(0.5f);
         enemyMoveSpeed += 40.f;
         player.setPosition(400, 472);
-        showLevel.setString("Level: " + int2Str(level));
+        showLevel.setString("Level: " + std::to_string(level));
       }
     }
     else if (checkIfGameOver())
@@ -464,7 +464,6 @@ private:
       if (sf::Keyboard::isKeyPressed(sf::Keyboard::Return))
       { 
         timeLeft.restart();
-        enemiesLeft = 0;
         lives = 3;
         level = 1;
         hitTheGround = 0;
@@ -472,7 +471,7 @@ private:
         timerDifficulty = sf::seconds(5.f);
         enemyMoveSpeed = 40.f;
         player.setPosition(400, 472);
-        showLevel.setString("Level: " + int2Str(level));
+        showLevel.setString("Level: " + std::to_string(level));
       }
     }
     else
@@ -487,18 +486,21 @@ private:
       {
         window.draw(*(*b));
       }
+      for (auto x = explosions.begin(); x != explosions.end(); x++)
+      {
+         window.draw(*(*x));        
+      }
     }
-    window.display();
-  }
-
-public:
-  void Run()
-  {
-    while (window.isOpen())
-    { 
       //create a view relative to speed
       sf::View gameview (sf::Vector2f(player.getPosition().x-speedX*0.7f,300.f),sf::Vector2f(800,600));
       window.setView(gameview);
+window.display();
+  }
+
+  void Game::Run()
+  {
+    while (window.isOpen())
+    { 
       speedometer.setPosition(window.getView().getCenter()+sf::Vector2f(-390,-300));
       timeRemaining.setPosition(window.getView().getCenter()+sf::Vector2f(-120,-300));
       livesLeft.setPosition(window.getView().getCenter()+sf::Vector2f(240,-300));
@@ -509,23 +511,23 @@ public:
       render();
       createBullet();
       createEnemies();
+      createExplosion();
       collision();
       processEvent();
     }
   }
 
-  FlyingGame() : window(sf::VideoMode(800, 600, 32), "Rotes Flugzeug")
+Game::Game() : window(sf::VideoMode(800, 600, 32), "Rotes Flugzeug")
   {
     //game window with player and background etc automaticly created when i create instance of flyinggame class
     level = 1;
     speedX = 0;
     lives = 3;
     hitTheGround = 0;
-    enemiesLeft = 0;
     levelTime = sf::seconds(60.f);
     enemyMoveSpeed = 40.f;
     window.setMouseCursorVisible(false);
-    //window.setFramerateLimit(3);
+  /* window.setFramerateLimit(3);*/
     window.setVerticalSyncEnabled(true);
     mountainpic.loadFromFile("pic/new_mountain.png");
     grasspic.loadFromFile("pic/new_grass.png");
@@ -534,6 +536,7 @@ public:
     enemy.loadFromFile("pic/bomb_new.png");
     plane.loadFromFile("pic/player_right.png");
     plane_left.loadFromFile("pic/player_left.png");
+    explosion.loadFromFile("pic/explosion_2.png");
     font.loadFromFile("roboto-black.ttf");
     plane.setSmooth(true);
     plane_left.setSmooth(true);
@@ -590,7 +593,7 @@ public:
     showLevel.setFont(font);
     showLevel.setCharacterSize(24);
     showLevel.setColor(sf::Color::Red);
-    showLevel.setString("Level: " + int2Str(level));
+    showLevel.setString("Level: " + std::to_string(level));
     speedometer.setFont(font);
     speedometer.setCharacterSize(24);
     speedometer.setColor(sf::Color::Red);
@@ -598,5 +601,4 @@ public:
     tryAgain.setCharacterSize(24);
     tryAgain.setColor(sf::Color::Red);
     tryAgain.setPosition(220, 280);
-  }
-};
+  };
