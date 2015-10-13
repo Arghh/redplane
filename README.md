@@ -2,7 +2,7 @@
 
 
 ##Info
-This repo holds the source code for a 2D game I'm developing using [SFML libaries.](http://www.sfml-dev.org/)
+This repo holds the source code for a 2D game I'm developing using [SFML libraries.](http://www.sfml-dev.org/)
 
 
 ##Download
