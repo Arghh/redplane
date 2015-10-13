@@ -1,8 +1,8 @@
-#include "Game.cpp"
+#include "Game.h"
 
 int main()
 {
-  FlyingGame game;
+  Game game;
   game.Run();
   return 0;
 }
