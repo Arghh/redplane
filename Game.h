@@ -1,0 +1,81 @@
+#include <SFML/Graphics.hpp>
+#include <SFML/System.hpp>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <memory>
+#include "AnimatedSprite.hpp"
+#include "Enemy.h"
+#include "Bullet.h"
+
+class Game : public sf::RenderWindow
+{
+  public:
+  void Run();
+  Game();
+private:
+  sf::RenderWindow window;
+  sf::Texture treepic;
+  sf::Texture grasspic;
+  sf::Texture mountainpic;
+  sf::Texture plane;
+  sf::Texture plane_left;
+  sf::Texture enemy;
+  sf::Texture shoot;
+  sf::Texture explosion;
+  sf::Sprite mountain;
+  sf::Sprite mountainRight;
+  sf::Sprite mountainLeft;
+  sf::Sprite tree;
+  sf::Sprite treeRight;
+  sf::Sprite treeLeft;
+  sf::Sprite grass;
+  sf::Sprite grassRight;
+  sf::Sprite grassLeft;
+  sf::Sprite player;
+  sf::Sprite bullet;
+  std::vector<std::shared_ptr<Enemy>> enemies;
+  std::vector<std::shared_ptr<Bullet>> bullets;
+  std::vector<std::shared_ptr<AnimatedSprite>> explosions;
+  sf::Clock playerDeltaTime;
+  sf::Clock enemyDeltaTime;
+  sf::Clock bulletDeltaTimer;
+  sf::Clock bulletSpawnTimer;
+  sf::Clock enemySpawnTimer;
+  sf::Clock explosionDeltaTimer;
+  sf::Clock timeLeft;
+  sf::Clock bulletTime;
+  float treeSpeed;
+  float mountainSpeed;
+  float grassSpeed;
+  float speedX;
+  float enemyMoveSpeed;
+  int lives;
+  int hitTheGround;
+  int level;
+  sf::Text showEnemiesLeft;
+  sf::Text livesLeft;
+  sf::Text bombsExploded;
+  sf::Font font;
+  sf::Text gameOver;
+  sf::Text timeRemaining;
+  sf::Text showLevel;
+  sf::Text tryAgain;
+  sf::Text speedometer;
+  sf::Time timerDifficulty;
+  sf::Time levelTime;
+  Animation boom;
+  bool directionLeft;
+  void processEvent();
+  void playerMove();
+  void createBullet();
+  void createExplosion();
+  void createEnemies();
+  void collision();  
+  void backgroundLoop();
+  bool checkIfGameOver();
+  bool checkWinner();
+  void render();
+};
