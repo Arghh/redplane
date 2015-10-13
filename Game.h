@@ -10,7 +10,7 @@
 #include "Enemy.h"
 #include "Bullet.h"
 
-class Game : public sf::RenderWindow
+class Game
 {
   public:
   void Run();
