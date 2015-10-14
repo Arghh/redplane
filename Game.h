@@ -15,13 +15,13 @@ class Game
   public:
   void Run();
   Game();
+
 private:
   sf::RenderWindow window;
   sf::Texture treepic;
   sf::Texture grasspic;
   sf::Texture mountainpic;
   sf::Texture plane;
-  sf::Texture plane_left;
   sf::Texture enemy;
   sf::Texture shoot;
   sf::Texture explosion;
@@ -35,7 +35,7 @@ private:
   sf::Sprite grassRight;
   sf::Sprite grassLeft;
   sf::Sprite player;
-  sf::Sprite bullet;
+  sf::Image icon;
   std::vector<std::shared_ptr<Enemy>> enemies;
   std::vector<std::shared_ptr<Bullet>> bullets;
   std::vector<std::shared_ptr<AnimatedSprite>> explosions;
@@ -47,9 +47,6 @@ private:
   sf::Clock explosionDeltaTimer;
   sf::Clock timeLeft;
   sf::Clock bulletTime;
-  float treeSpeed;
-  float mountainSpeed;
-  float grassSpeed;
   float speedX;
   float enemyMoveSpeed;
   int lives;
@@ -78,4 +75,5 @@ private:
   bool checkIfGameOver();
   bool checkWinner();
   void render();
+  void minimap();
 };
