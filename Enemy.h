@@ -6,6 +6,7 @@ public:
     Enemy(const sf::Texture& texture,  float enemyMoveSpeed, float posx, float posy);
     void updateEnemy(float speedX, float timeDelta);
     sf::FloatRect getEnemyGlobalBounds() const;
+    sf::Vector2f getEnemyPosition() const;
     bool isEnemyAlive() const;
 
 private:
