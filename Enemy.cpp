@@ -32,6 +32,10 @@ sf::FloatRect Enemy::getEnemyGlobalBounds() const
     return mSprite.getGlobalBounds();
 }
 
+sf::Vector2f Enemy::getEnemyPosition() const
+{
+  return mSprite.getPosition();
+}
 bool Enemy::isEnemyAlive() const
 {
     return mDistanceTravelled < mMaximumDistance;
