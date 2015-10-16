@@ -1,4 +1,4 @@
-#include "Enemy.h"
+#include "Enemy.hpp"
 
 Enemy::Enemy(const sf::Texture& texture, float enemeyMoveSpeed, float posx, float posy) : 
      mSprite(texture),
