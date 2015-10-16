@@ -187,7 +187,7 @@ void Game::createEnemies()
   const auto spawnSome = enemySpawnTimer.getElapsedTime();
   const auto timeSinceStart = enemyDeltaTime.getElapsedTime();
   timerDifficulty = sf::seconds(5.f);
-  if (spawnSome > timerDifficulty)
+  if (spawnSome > timerDifficulty && countDown > 10)
   {
     auto pEnemy = std::make_shared<Enemy>(Enemy(bomb,enemyMoveSpeed,posx,posy));
     enemies.push_back(pEnemy);
@@ -329,7 +329,7 @@ bool Game::checkWinner()
 {
   const auto timer = timeLeft.getElapsedTime();
   //time left of level displayed as natural numbers
-  int countDown = levelTime.asSeconds() - timer.asSeconds();
+  countDown = levelTime.asSeconds() - timer.asSeconds();
 
   if (timer >= levelTime)
   {
@@ -419,7 +419,7 @@ void Game::render()
       lives = 3;
       level = 1;
       hitTheGround = 0;
-      levelTime = sf::seconds(30.f);
+      levelTime = sf::seconds(60.f);
       timerDifficulty = sf::seconds(5.f);
       enemyMoveSpeed = 40.f;
       player.setPlayerPosition(400, 472);
