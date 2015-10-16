@@ -1,20 +1,23 @@
+#ifndef GAME_INCLUDE
+#define GAME_INCLUDE
+
 #include <SFML/Graphics.hpp>
 #include <SFML/System.hpp>
-#include <iostream>
-#include <sstream>
-#include <string>
 #include <vector>
 #include <algorithm>
 #include <memory>
+#include "Enemy.hpp"
+#include "Bullet.hpp"
+#include "Radar.hpp"
+#include "Animation.hpp"
 #include "AnimatedSprite.hpp"
-#include "Enemy.h"
-#include "Bullet.h"
 
 class Game
 {
   public:
+Game();
   void Run();
-  Game();
+  sf::View gameview;
 
 private:
   sf::RenderWindow window;
@@ -25,6 +28,8 @@ private:
   sf::Texture enemy;
   sf::Texture shoot;
   sf::Texture explosion;
+  sf::Texture bomb;
+  Animation boom;
   sf::Sprite mountain;
   sf::Sprite mountainRight;
   sf::Sprite mountainLeft;
@@ -34,7 +39,6 @@ private:
   sf::Sprite grass;
   sf::Sprite grassRight;
   sf::Sprite grassLeft;
-  sf::Sprite player;
   sf::Image icon;
   std::vector<std::shared_ptr<Enemy>> enemies;
   std::vector<std::shared_ptr<Bullet>> bullets;
@@ -46,7 +50,6 @@ private:
   sf::Clock enemySpawnTimer;
   sf::Clock explosionDeltaTimer;
   sf::Clock timeLeft;
-  sf::Clock bulletTime;
   float speedX;
   float enemyMoveSpeed;
   int lives;
@@ -63,17 +66,22 @@ private:
   sf::Text speedometer;
   sf::Time timerDifficulty;
   sf::Time levelTime;
-  Animation boom;
+  Radar radar;
+  Player player;
   bool directionLeft;
   void processEvent();
   void playerMove();
-  void createBullet();
-  void createExplosion();
-  void createEnemies();
+  void loadExplosion();
+  void animateExplosion();
   void collision();  
   void backgroundLoop();
-  bool checkIfGameOver();
+  bool checkGameOver();
   bool checkWinner();
+  void changeView();
   void render();
-  void minimap();
+  void createPlayer();
+  void createBullet();
+  void createEnemies();
 };
+
+#endif // GAME_INCLUDE
