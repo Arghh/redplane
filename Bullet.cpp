@@ -1,4 +1,4 @@
-#include "Bullet.h"
+#include "Bullet.hpp"
 
 
 Bullet::Bullet(const sf::Texture& texture, bool directionLeft, const sf::Vector2f& position) :
@@ -30,7 +30,10 @@ sf::FloatRect Bullet::getBulletGlobalBounds() const
 {
   return mSprite.getGlobalBounds();
 }
-
+sf::Vector2f Bullet::getBulletPosition() const
+{
+  return mSprite.getPosition();
+}
 bool Bullet::isBulletAlive() const
 {
   return mDistanceTravelled < mMaximumDistance;
