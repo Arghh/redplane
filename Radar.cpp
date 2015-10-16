@@ -9,21 +9,21 @@ Radar::Radar()
 void Radar::draw (Bullet& bullet)
 {
   sf::RectangleShape b;
-  b.setSize(sf::Vector2f(4,4));
-  b.setFillColor(sf::Color::Cyan);
-  b.setPosition(bullet.getBulletPosition().x/10.f+80.f,bullet.getBulletPosition().y/10.f+18.f);
-  texture.draw(bullet);
+  b.setSize(sf::Vector2f(2,2));
+  b.setFillColor(sf::Color::Green);
+  b.setPosition(bullet.getBulletPosition().x/10.f+80.f,bullet.getBulletPosition().y/10.f+20.f);
+  texture.draw(b);
 }
 
 void Radar::draw(Player& player)
 {
-  
   sf::CircleShape asd;
-  asd.setRadius(8);
+  asd.setRadius(4);
   asd.setFillColor(sf::Color::White);
   asd.setPosition(player.getPlayerPosition().x/10.f+80.f,player.getPlayerPosition().y/10.f+18.f);
   texture.draw(asd);
 }
+
 // draws an object onto the radar screen
 void Radar::draw (Enemy& enemy)
 {
