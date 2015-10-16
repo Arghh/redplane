@@ -12,15 +12,16 @@
 #include "Animation.hpp"
 #include "AnimatedSprite.hpp"
 
+
 class Game
 {
-  public:
-Game();
+public:
+  Game();
   void Run();
-  sf::View gameview;
 
 private:
   sf::RenderWindow window;
+  sf::View gameview;
   sf::Texture treepic;
   sf::Texture grasspic;
   sf::Texture mountainpic;
