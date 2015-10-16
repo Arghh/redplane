@@ -1,6 +1,5 @@
 #ifndef GAME_INCLUDE
 #define GAME_INCLUDE
-
 #include <SFML/Graphics.hpp>
 #include <SFML/System.hpp>
 #include <vector>
@@ -11,7 +10,6 @@
 #include "Radar.hpp"
 #include "Animation.hpp"
 #include "AnimatedSprite.hpp"
-
 
 class Game
 {
@@ -56,6 +54,7 @@ private:
   int lives;
   int hitTheGround;
   int level;
+  int countDown;
   sf::Text showEnemiesLeft;
   sf::Text livesLeft;
   sf::Text bombsExploded;
@@ -84,5 +83,4 @@ private:
   void createBullet();
   void createEnemies();
 };
-
 #endif // GAME_INCLUDE
