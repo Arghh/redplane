@@ -1,3 +1,5 @@
+#ifndef ENEMY_INCLUDE
+#define ENEMY_INCLUDE
 #include <SFML/Graphics.hpp>
 
 class Enemy : public sf::Drawable
@@ -16,3 +18,4 @@ private:
     const float     mMaximumDistance;
     void draw(sf::RenderTarget &target, sf::RenderStates states) const override;
 };
+#endif
