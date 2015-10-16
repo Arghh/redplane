@@ -1,6 +1,5 @@
 #ifndef RADAR_INCLUDE
 #define RADAR_INCLUDE
-
 #include <SFML/Graphics.hpp>
 #include<SFML/Window/Window.hpp>
 #include <SFML/System.hpp>
