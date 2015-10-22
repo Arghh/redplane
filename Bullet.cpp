@@ -5,7 +5,7 @@ Bullet::Bullet(const sf::Texture& texture, bool directionLeft, const sf::Vector2
   mSprite(texture),
   mSpeedPerSecond(800.f),
   mDistanceTravelled(0),
-  mMaximumDistance(1300.f)
+  mMaximumDistance(900.f)
 {
   this->direction = directionLeft;
   this->mSprite.setPosition(position);
