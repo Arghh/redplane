@@ -19,7 +19,7 @@ void Radar::draw(Player& player)
 {
   sf::CircleShape asd;
   asd.setRadius(4);
-  asd.setFillColor(sf::Color::White);
+  asd.setFillColor(sf::Color::Red);
   asd.setPosition(player.getPlayerPosition().x/10.f+80.f,player.getPlayerPosition().y/10.f+18.f);
   texture.draw(asd);
 }
@@ -29,7 +29,7 @@ void Radar::draw (Enemy& enemy)
 {
   sf::RectangleShape e;
   e.setSize(sf::Vector2f(5,5));
-  e.setFillColor(sf::Color::Red);
+  e.setFillColor(sf::Color::White);
   e.setPosition(enemy.getEnemyPosition().x/10.f+80.f,enemy.getEnemyPosition().y/10.f+18.f);
   texture.draw(e);
 }
