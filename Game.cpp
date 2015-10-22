@@ -368,9 +368,9 @@ void Game::createPlayer()
 
 void Game::render()
 {
-  //clear old draw new place and show
+  //clear old, draw new and show
   window.clear();
-  radar.clear(sf::Color::Black);
+   radar.clear(sf::Color::Black);
   window.draw(mountain);
   window.draw(mountainRight);
   window.draw(mountainLeft);
@@ -446,9 +446,9 @@ void Game::render()
       window.draw(*(*x));        
     }
   }
-  radar.display();
   window.draw(radar);
-  window.display(); 
+  radar.display();
+  window.display();
 }
 
 void Game::changeView()
@@ -456,7 +456,7 @@ void Game::changeView()
   //create a smooth change of view if player turns left or right
   if(directionLeft && !speedX==0)
   {
-    gameview.move(-30.f,0);
+    gameview.move(-20.f,0);
 
     if(gameview.getCenter().x < 40)
     {
@@ -465,7 +465,7 @@ void Game::changeView()
   }
   else if(!speedX==0)
   {
-    gameview.move(30.f,0);
+    gameview.move(20.f,0);
 
     if(gameview.getCenter().x > 760)
     {
@@ -520,10 +520,9 @@ Game::Game() : window(sf::VideoMode(800, 600, 32), "Rotes Flugzeug")
   levelTime = sf::seconds(30.f);
   enemyMoveSpeed = 40.f;
   window.setMouseCursorVisible(false);
-  window.setFramerateLimit(60);
-  window.setVerticalSyncEnabled(true);
-  mountainpic.loadFromFile("pic/new_mountain.png");
-  icon.loadFromFile("pic/icon.png");
+ window.setFramerateLimit(60);
+  mountainpic.loadFromFile("pic/mountain.png");
+ icon.loadFromFile("pic/icon.png");
   grasspic.loadFromFile("pic/new_grass.png");
   treepic.loadFromFile("pic/trees_new.png");
   shoot.loadFromFile("pic/bullet-s.png");
